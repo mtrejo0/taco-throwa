@@ -1,0 +1,16 @@
+{
+  "name": "taco-fire",
+  "version": "1.0.0",
+  "description": "A 3D game where you throw tacos at plates",
+  "main": "index.js",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "three": "^0.162.0"
+  },
+  "devDependencies": {
+    "vite": "^5.1.4"
+  }
+} 
