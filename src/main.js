@@ -30,6 +30,20 @@ startMessageDiv.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
 startMessageDiv.textContent = 'Press SPACE to Start';
 document.body.appendChild(startMessageDiv);
 
+// Create disclaimer message
+const disclaimerDiv = document.createElement('div');
+disclaimerDiv.style.position = 'absolute';
+disclaimerDiv.style.top = '20px';
+disclaimerDiv.style.left = '50%';
+disclaimerDiv.style.transform = 'translateX(-50%)';
+disclaimerDiv.style.color = 'white';
+disclaimerDiv.style.fontSize = '24px';
+disclaimerDiv.style.fontFamily = 'Arial';
+disclaimerDiv.style.textAlign = 'center';
+disclaimerDiv.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
+disclaimerDiv.textContent = 'Fill 100 plates as fast as you can!';
+document.body.appendChild(disclaimerDiv);
+
 // Lighting
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
@@ -112,45 +126,40 @@ let score = 0;
 const scoreElement = document.getElementById('score');
 
 // Create plates
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 100; i++) {
+    // Create plate group
+    const plateGroup = new THREE.Group();
+    
     // Create plate base
     const plateGeometry = new THREE.CylinderGeometry(1, 1, 0.1, 32);
     const plateMaterial = new THREE.MeshStandardMaterial({ 
         color: 0xffffff,
-        roughness: 0.2,
-        metalness: 0.8
+        roughness: 0.3,
+        metalness: 0.5
     });
     const plate = new THREE.Mesh(plateGeometry, plateMaterial);
+    plateGroup.add(plate);
     
-    // Add plate rim
-    const rimGeometry = new THREE.TorusGeometry(1, 0.05, 16, 32);
-    const rimMaterial = new THREE.MeshStandardMaterial({
-        color: 0xC0C0C0,
-        roughness: 0.3,
-        metalness: 0.9
-    });
-    const rim = new THREE.Mesh(rimGeometry, rimMaterial);
-    rim.rotation.x = Math.PI / 2;
-    rim.position.y = 0.05;
-    plate.add(rim);
-    
-    // Add plate pattern
-    const patternGeometry = new THREE.RingGeometry(0.3, 0.8, 32);
-    const patternMaterial = new THREE.MeshStandardMaterial({
-        color: 0xF5F5F5,
+    // Add center circle
+    const circleGeometry = new THREE.CircleGeometry(0.7, 32);
+    const circleMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
         roughness: 0.4,
         metalness: 0.6,
         side: THREE.DoubleSide
     });
-    const pattern = new THREE.Mesh(patternGeometry, patternMaterial);
-    pattern.rotation.x = -Math.PI / 2;
-    pattern.position.y = 0.06;
-    plate.add(pattern);
+    const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+    circle.rotation.x = -Math.PI / 2;
+    circle.position.y = 0.06;
+    plateGroup.add(circle);
     
-    plate.position.set(i * 5 - 22.5, 0.05, 0);
-    plate.userData.hit = false;
-    scene.add(plate);
-    plates.push(plate);
+    // Arrange plates in a grid
+    const row = Math.floor(i / 10);
+    const col = i % 10;
+    plateGroup.position.set(col * 5 - 22.5, 0.05, row * 5 - 22.5);
+    plateGroup.userData.hit = false;
+    scene.add(plateGroup);
+    plates.push(plateGroup);
 }
 
 // Create game over message
@@ -176,7 +185,9 @@ function resetGame() {
     // Reset plates
     plates.forEach(plate => {
         plate.userData.hit = false;
-        plate.material.color.set(0xffffff);
+        plate.children.forEach(child => {
+            child.material.color.set(0xffffff);
+        });
     });
     
     // Remove all tacos
@@ -185,7 +196,7 @@ function resetGame() {
     
     // Reset score
     score = 0;
-    scoreElement.textContent = `Plates Hit: ${score}/10`;
+    scoreElement.textContent = `Plates Hit: ${score}/100`;
     
     // Reset game state
     gameStartTime = null;
@@ -337,7 +348,7 @@ function animate() {
     // Update timer if game is in progress
     if (gameStartTime && !gameEndTime && !isGameComplete) {
         const elapsedTime = ((Date.now() - gameStartTime) / 1000).toFixed(1);
-        scoreElement.textContent = `Plates Hit: ${score}/10 | Time: ${elapsedTime}s`;
+        scoreElement.textContent = `Plates Hit: ${score}/100 | Time: ${elapsedTime}s`;
     }
 
     // Movement and jumping
@@ -404,7 +415,10 @@ function animate() {
             if (!plate.userData.hit && 
                 taco.position.distanceTo(plate.position) < 1.5) {
                 plate.userData.hit = true;
-                plate.material.color.set(0x00ff00);
+                // Turn plate green when hit
+                plate.children.forEach(child => {
+                    child.material.color.set(0x00ff00);
+                });
                 score++;
                 
                 // Stop the taco's movement and rotation
@@ -421,7 +435,7 @@ function animate() {
                 tacos.splice(i, 1);
 
                 // Check if game is complete
-                if (score === 10 && !isGameComplete) {
+                if (score === 100 && !isGameComplete) {
                     gameEndTime = Date.now();
                     isGameComplete = true;
                     const totalTime = ((gameEndTime - gameStartTime) / 1000).toFixed(1);
